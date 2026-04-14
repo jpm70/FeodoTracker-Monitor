@@ -1,35 +1,54 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>OTX API Test</title>
+<html><head><meta charset="UTF-8"><title>API Test C+D</title>
 <style>
 body{background:#07080d;color:#c8d8f0;font-family:monospace;padding:20px}
 .ok{color:#00ffaa}.err{color:#ff3c5c}.warn{color:#ffaa00}
 pre{background:#0d0f1a;padding:10px;border-radius:6px;font-size:11px;
     white-space:pre-wrap;word-break:break-all;margin-top:6px}
 h3{color:#00c8ff;margin:18px 0 4px}
+h2{color:#ff6b35;margin-bottom:4px}
+hr{border-color:#1a2540;margin:24px 0}
 </style></head>
 <body>
-<h2 style="color:#ff6b35">OTX AlienVault · CORS Test</h2>
+<h2>API Test · Phishing + Certificate Transparency</h2>
 <p style="color:#4a5a7a;margin-bottom:8px">Origen: <span id="orig"></span></p>
 <div id="results"></div>
 <script>
 document.getElementById('orig').textContent = window.location.origin;
 
 const tests = [
+  // ── OPCIÓN C: Phishing ──────────────────────────────────────────────
   {
-    name: '1. OTX · pulsos recientes (sin key)',
-    url:  'https://otx.alienvault.com/api/v1/pulses/activity?limit=5'
+    name: 'C1. OpenPhish · feed público (texto plano)',
+    url: 'https://openphish.com/feed.txt'
   },
   {
-    name: '2. OTX · indicadores recientes por tipo IP',
-    url:  'https://otx.alienvault.com/api/v1/indicators/export?type=IPv4&limit=5'
+    name: 'C2. OpenPhish · via corsproxy.io',
+    url: 'https://corsproxy.io/?' + encodeURIComponent('https://openphish.com/feed.txt')
   },
   {
-    name: '3. OTX · subscribed pulses (sin autenticación)',
-    url:  'https://otx.alienvault.com/api/v1/pulses/subscribed?limit=5'
+    name: 'C3. PhishTank · feed JSON (sin key)',
+    url: 'https://data.phishtank.com/data/online-valid.json'
   },
   {
-    name: '4. OTX · via corsproxy.io',
-    url:  'https://corsproxy.io/?' + encodeURIComponent('https://otx.alienvault.com/api/v1/pulses/activity?limit=5')
+    name: 'C4. PhishTank · via corsproxy.io',
+    url: 'https://corsproxy.io/?' + encodeURIComponent('https://data.phishtank.com/data/online-valid.json')
+  },
+
+  // ── OPCIÓN D: Certificate Transparency (crt.sh) ─────────────────────
+  {
+    name: 'D1. crt.sh · búsqueda JSON directa',
+    url: 'https://crt.sh/?q=%.github.io&output=json&limit=5'
+  },
+  {
+    name: 'D2. crt.sh · via corsproxy.io',
+    url: 'https://corsproxy.io/?' + encodeURIComponent('https://crt.sh/?q=%.github.io&output=json&limit=5')
+  },
+
+  // ── BONUS: APIs que sabemos que funcionan (referencia) ───────────────
+  {
+    name: 'REF. NIST NVD (sabemos que funciona)',
+    url: 'https://services.nvd.nist.gov/rest/json/cves/2.0/?resultsPerPage=2'
   },
 ];
 
@@ -44,8 +63,10 @@ const div = document.getElementById('results');
     try {
       const r = await fetch(t.url, {cache:'no-store'});
       const text = await r.text();
-      pre.className = r.ok && text.length > 50 ? 'ok' : 'warn';
-      pre.textContent = 'HTTP ' + r.status + ' · ' + text.length + ' bytes\n\n' + text.substring(0,400);
+      const ok = r.ok && text.length > 50;
+      pre.className = ok ? 'ok' : 'warn';
+      pre.textContent = 'HTTP ' + r.status + ' · ' + text.length + ' bytes\n\n'
+        + text.substring(0, 300) + (text.length > 300 ? '\n...' : '');
     } catch(e) {
       pre.className = 'err';
       pre.textContent = 'ERROR: ' + e.message;
